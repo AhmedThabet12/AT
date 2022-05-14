@@ -1,0 +1,382 @@
+# AT
+Project: Investigate a Dataset - No Show Appointments in Brazil]
+Table of Contents
+Introduction
+Data Wrangling
+Exploratory Data Analysis
+Conclusions
+
+Introduction
+Our study dataset is about the rate of medical appointment' attendance in Brazil.
+
+We are looking forward to drawing a clearer picture on which medical, social and demopgraphic factors can play a role in that.
+
+Our dataset is a sample size of 100,000 medical appointments across Brazil.
+
+Dataset Description
+We have here in the dataset 14 columns: one column presenting itelf as the dependent variable, "No-Show", which explains if the patient with a medical appointment showed or not. The dataset consistents on another 13 independent variables to explain if they affect the attendance rate:
+
+Social factors: Scholarship, if the patient is enroled in the Bolsia Familia Program.
+Medical factors, factors that determines the health status of the patient, like: handicap, alcoholism, chronic dieases (hypertension, diabetes).
+Demographic factors: neighoubrhood age and gender
+Other facors, like SMS notification, whether the patients recieved a SMS notification reminding them of their appointments.
+Question(s) for Analysis
+We are looking to tackle the folliwng questions in the light of the given dataset:
+
+Does Age play a role in the tendency of patients to show up for their medical appointments?
+Does Gender plays also a role?
+Would SMS notification improve the medical appointments' attendance?
+Does health status push people to show for their medical appointments?
+Can age and gender together break down the medical appointment attendance's low rate?
+May Neighbourhood along SMS notification coverage input some insight on the attendance of medical appointments?
+# Use this cell to set up import statements for all of the packages that you
+#   plan to use.
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+​
+# Remember to include a 'magic word' so that your visualizations are plotted
+#   inline with the notebook. See this page for more:
+#   http://ipython.readthedocs.io/en/stable/interactive/magics.html
+%matplotlib inline
+# Upgrade pandas to use dataframe.explode() function. 
+!pip install --upgrade pandas==0.25.0
+
+Data Wrangling
+# Load your data and print out a few lines. Perform operations to inspect data
+df = pd.read_csv('noshowappointments-kagglev2-may-2016.csv')
+#   types and look for instances of missing or possibly errant data.
+df.head()
+PatientId	AppointmentID	Gender	ScheduledDay	AppointmentDay	Age	Neighbourhood	Scholarship	Hipertension	Diabetes	Alcoholism	Handcap	SMS_received	No-show
+0	2.987250e+13	5642903	F	2016-04-29T18:38:08Z	2016-04-29T00:00:00Z	62	JARDIM DA PENHA	0	1	0	0	0	0	No
+1	5.589978e+14	5642503	M	2016-04-29T16:08:27Z	2016-04-29T00:00:00Z	56	JARDIM DA PENHA	0	0	0	0	0	0	No
+2	4.262962e+12	5642549	F	2016-04-29T16:19:04Z	2016-04-29T00:00:00Z	62	MATA DA PRAIA	0	0	0	0	0	0	No
+3	8.679512e+11	5642828	F	2016-04-29T17:29:31Z	2016-04-29T00:00:00Z	8	PONTAL DE CAMBURI	0	0	0	0	0	0	No
+4	8.841186e+12	5642494	F	2016-04-29T16:07:23Z	2016-04-29T00:00:00Z	56	JARDIM DA PENHA	0	1	1	0	0	0	No
+General Notes
+#   types and look for instances of missing or possibly errant data.
+df.isnull().sum()
+PatientId         0
+AppointmentID     0
+Gender            0
+ScheduledDay      0
+AppointmentDay    0
+Age               0
+Neighbourhood     0
+Scholarship       0
+Hipertension      0
+Diabetes          0
+Alcoholism        0
+Handcap           0
+SMS_received      0
+No-show           0
+dtype: int64
+Based on the results above, we do not have any missing values to deal with.
+
+#Having a holisitic view of the data sample
+df.describe()
+PatientId	AppointmentID	Age	Scholarship	Hipertension	Diabetes	Alcoholism	Handcap	SMS_received
+count	1.105270e+05	1.105270e+05	110527.000000	110527.000000	110527.000000	110527.000000	110527.000000	110527.000000	110527.000000
+mean	1.474963e+14	5.675305e+06	37.088874	0.098266	0.197246	0.071865	0.030400	0.022248	0.321026
+std	2.560949e+14	7.129575e+04	23.110205	0.297675	0.397921	0.258265	0.171686	0.161543	0.466873
+min	3.921784e+04	5.030230e+06	-1.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000
+25%	4.172614e+12	5.640286e+06	18.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000
+50%	3.173184e+13	5.680573e+06	37.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000
+75%	9.439172e+13	5.725524e+06	55.000000	0.000000	0.000000	0.000000	0.000000	0.000000	1.000000
+max	9.999816e+14	5.790484e+06	115.000000	1.000000	1.000000	1.000000	1.000000	4.000000	1.000000
+Primarily, the median and average age of our patients are around 37 years old, which means that our data is bell-shape distribution. Around 25% of the patients are around the age of 18 years old, another 25 % of the patients are between age of 550 and 115 years old. The minimum age of a patient is -1, which means that the data input is inconsistent, and it would be better to drop it.
+
+#Singling out the row with inconsistent data (to be dropped)
+inconsistent = df.query('Age == -1')
+inconsistent
+PatientId	AppointmentID	Gender	ScheduledDay	AppointmentDay	Age	Neighbourhood	Scholarship	Hipertension	Diabetes	Alcoholism	Handcap	SMS_received	No-show
+99832	4.659432e+14	5775010	F	2016-06-06T08:58:13Z	2016-06-06T00:00:00Z	-1	ROMÃO	0	0	0	0	0	0	No
+#checking the data size of the sample
+df.shape
+(110527, 14)
+We have 14 columns, one column is presenting itself as the dependent variable "No-Show", which the medical appointments non-attendance, and the other 13 arrays are the independent variables that could contribute to the medical appointments non-attendance. We have here a sample size of around 100000 medical appointments.
+
+#checking whether we have any duplicated data
+sum(df.duplicated())
+0
+We also do not have any duplicated data. Meaning that, every single row represents a unqiue set of data in a row, even if one of the cell values might have the same value in another row.
+
+# Finding out more about the possible duplicated values and the level of interaction between the arrays
+df['PatientId'].nunique()
+62299
+total_multiple_appointments = df['PatientId'].duplicated().sum()
+total_multiple_appointments
+48228
+According to that, the number of unique patient IDs are 62299 out of 110527, which infers that are 48226 patients have at least more than one medical appointment against 62299 patients with a single medical appointment.
+
+# Delving into more details about the rate of medical appointment attendance of the patients with mutliple medical appointments
+no_show_multiple_appointments = df.duplicated(['PatientId', 'No-show']).sum()
+no_show_multiple_appointments
+38710
+rate_no_show = no_show_multiple_appointments / total_multiple_appointments
+rate_no_show
+0.80264576594509418
+Around 8 % of the patients with multiple medical appointmens do not show up for the medical appointments at all.
+
+Data Cleaning
+# After discussing the structure of the data and any problems that need to be
+#   cleaned, perform those cleaning steps in the second part of this section.
+# renaming all the columns
+df.rename(columns = lambda x: x.lower().replace("-", "_"), inplace = True)
+#correcting 'hipertension' to 'hypertension'
+df.rename(columns = {'hipertension': 'hypertension'}, inplace = True)
+df.head()
+patientid	appointmentid	gender	scheduledday	appointmentday	age	neighbourhood	scholarship	hypertension	diabetes	alcoholism	handcap	sms_received	no_show
+0	2.987250e+13	5642903	F	2016-04-29T18:38:08Z	2016-04-29T00:00:00Z	62	JARDIM DA PENHA	0	1	0	0	0	0	No
+1	5.589978e+14	5642503	M	2016-04-29T16:08:27Z	2016-04-29T00:00:00Z	56	JARDIM DA PENHA	0	0	0	0	0	0	No
+2	4.262962e+12	5642549	F	2016-04-29T16:19:04Z	2016-04-29T00:00:00Z	62	MATA DA PRAIA	0	0	0	0	0	0	No
+3	8.679512e+11	5642828	F	2016-04-29T17:29:31Z	2016-04-29T00:00:00Z	8	PONTAL DE CAMBURI	0	0	0	0	0	0	No
+4	8.841186e+12	5642494	F	2016-04-29T16:07:23Z	2016-04-29T00:00:00Z	56	JARDIM DA PENHA	0	1	1	0	0	0	No
+# dropping the row with inconsistent_data
+df.drop(index=99832, inplace = True)
+# dropping the row with inconsistent_data
+df.drop_duplicates(['patientid','no_show'], inplace = True)
+#dropping irrelevant arrays for our research focus
+df.drop(['patientid', 'appointmentid', 'scheduledday', 'appointmentday'], axis = 1, inplace = True)
+df.head()
+gender	age	neighbourhood	scholarship	hypertension	diabetes	alcoholism	handcap	sms_received	no_show
+0	F	62	JARDIM DA PENHA	0	1	0	0	0	0	No
+1	M	56	JARDIM DA PENHA	0	0	0	0	0	0	No
+2	F	62	MATA DA PRAIA	0	0	0	0	0	0	No
+3	F	8	PONTAL DE CAMBURI	0	0	0	0	0	0	No
+4	F	56	JARDIM DA PENHA	0	1	1	0	0	0	No
+df.shape
+(71816, 10)
+df.describe()
+age	scholarship	hypertension	diabetes	alcoholism	handcap	sms_received
+count	71816.000000	71816.000000	71816.000000	71816.000000	71816.000000	71816.000000	71816.000000
+mean	36.527501	0.095536	0.195068	0.070959	0.025036	0.020135	0.335566
+std	23.378262	0.293956	0.396256	0.256758	0.156236	0.155338	0.472191
+min	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000
+25%	17.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000
+50%	36.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000
+75%	55.000000	0.000000	0.000000	0.000000	0.000000	0.000000	1.000000
+max	115.000000	1.000000	1.000000	1.000000	1.000000	4.000000	1.000000
+We can see now that the minimum age is 0. After dropping the row with inconsistent data and the irrelevant cateogorical arrays and renaming the arrays' names, we now have ready-data to bog down and compe up with some insights.
+
+
+Exploratory Data Analysis
+General Overview
+#Overview on the independent variables
+df.hist(figsize=(16,8));
+
+We can come up with some primary findings:
+
+Most of or patients are younger than 50 years old.
+Most of our patients are enrolled in the Bolsa Familia program.
+Less than 10000 patients only are diabetic patients.
+The absolute majority of our patients are niether handicapped not alcoholic.
+Between 35000 and 40000 of our patients have not received a SMS notification of the medical appointment booked.
+df.corr(method = 'pearson', min_periods=1)
+age	scholarship	hypertension	diabetes	alcoholism	handcap	sms_received
+age	1.000000	-0.092138	0.515340	0.295225	0.085677	0.081278	0.017683
+scholarship	-0.092138	1.000000	-0.025147	-0.023403	0.034330	-0.007058	0.002476
+hypertension	0.515340	-0.025147	1.000000	0.428781	0.080582	0.082555	-0.008033
+diabetes	0.295225	-0.023403	0.428781	1.000000	0.025137	0.055299	-0.017578
+alcoholism	0.085677	0.034330	0.080582	0.025137	1.000000	0.009638	-0.010636
+handcap	0.081278	-0.007058	0.082555	0.055299	0.009638	1.000000	-0.019597
+sms_received	0.017683	0.002476	-0.008033	-0.017578	-0.010636	-0.019597	1.000000
+It could be important to have a look at the level of correlation between the relevant independent variables.
+
+On one side, the values presented in the "sms_received" column is a dummy binary data of 0=show and 1=no-show, so it will not be be significant but we can draw a finding that the SMS notification rate is significantly low irrelevant to the independent variables.
+
+On the other side, if we look into the correlation coefficient between the independent variables, like "hypetension" and "Age", which means the older the people are more likely to suffer of hypertension. The same rule applies to the (diabetes-age)nexus but on a lower scale.
+
+We can also see that the magnitude and direction of the correlation between between age hypertension and diabetes is significantly high.
+
+#Renaming the cateogies of 'No Show' column in sake of clearence
+show=df.no_show =='No'
+noshow=df.no_show =='Yes'
+df[show].count(), df[noshow].count()
+(gender           54153
+ age              54153
+ neighbourhood    54153
+ scholarship      54153
+ hypertension     54153
+ diabetes         54153
+ alcoholism       54153
+ handcap          54153
+ sms_received     54153
+ no_show          54153
+ dtype: int64, gender           17663
+ age              17663
+ neighbourhood    17663
+ scholarship      17663
+ hypertension     17663
+ diabetes         17663
+ alcoholism       17663
+ handcap          17663
+ sms_received     17663
+ no_show          17663
+ dtype: int64)
+The ratio of the patients (54153) showed up for their medical appointments to patients who do not do (17663) is 3:1.
+
+total_patients = show | noshow
+total_patients.sum()
+71816
+df.shape
+(71816, 10)
+That means that our data still consistent and the sum of showed and non-showed patients equal to the current sample size.
+
+df[show].mean(numeric_only=True), df[noshow].mean(numeric_only=True)
+(age             37.229166
+ scholarship      0.091334
+ hypertension     0.202944
+ diabetes         0.072868
+ alcoholism       0.023600
+ handcap          0.020904
+ sms_received     0.297232
+ dtype: float64, age             34.376267
+ scholarship      0.108419
+ hypertension     0.170922
+ diabetes         0.065108
+ alcoholism       0.029440
+ handcap          0.017777
+ sms_received     0.453094
+ dtype: float64)
+df[show].median(numeric_only=True), df[noshow].median(numeric_only=True)
+(age             37.0
+ scholarship      0.0
+ hypertension     0.0
+ diabetes         0.0
+ alcoholism       0.0
+ handcap          0.0
+ sms_received     0.0
+ dtype: float64, age             33.0
+ scholarship      0.0
+ hypertension     0.0
+ diabetes         0.0
+ alcoholism       0.0
+ handcap          0.0
+ sms_received     0.0
+ dtype: float64)
+After checking the mean and median values of the showed and no-showed patients, we can see that the avergae age of showed patients is around 37 years old and the average age of the no-showed patients is around 33-34 years old.
+
+Surprisingly, only 29% of the showed patients receive a SMS, however, more than 45% of the no-showed patients recieved messages.
+
+Research Question 1 (Does Age play a role in the tendency of patients to show up for their medical appointments?)
+# Use this, and more code cells, to explore your data. Don't forget to add
+#   Markdown cells to document your observations and findings.
+plt.figure(figsize=[16,4])
+df.age[show].hist(alpha=0.5, bins=10, color='blue', label = 'show')
+df.age[noshow].hist(alpha=0.5, bins=10, color= 'red', label='noshow')
+plt.legend();
+plt.title('Rate of Medical Attendance across Age Groups')
+plt.xlabel('Age')
+plt.ylabel('Number of Patients');
+
+The highest level of attendance can be noticed with the youngest age in the sample; meaning that, the parents have the highest tendency of medical appointments taking care of their children.
+The second highest level of attendance is 50s years old patients.
+As the age advnances, the level of medical appointments' attendance is getting lesser.
+Research Question 2 (Does Gender plays also a role?)
+# Continue to explore the data to address your additional research
+#   questions. Add more headers as needed if you have more questions to
+#   investigate.
+plt.figure(figsize=[16,4])
+df.gender[show].hist(alpha=0.5, bins=10, color='blue', label = 'show')
+df.gender[noshow].hist(alpha=0.5, bins=10, color= 'red', label='noshow')
+plt.legend();
+plt.title('Rate of Medical Attendance by Gender')
+plt.xlabel('Gender')
+plt.ylabel('number of patients');
+
+Most of the patients in the sample are apparently labeled as Female. The rate of attendance of medical appointment is obviously varying between female and male, 77% and 29% , respectively.
+
+Research Question 3 (Would SMS notification improve the medical appointments' attendance?)
+def attendance (df,col_name, showed, noshowed):
+    plt.figure(figsize=[6,3])
+    df[col_name][noshow].value_counts(normalize= True).plot(kind='pie', label='show')
+    plt.legend();
+    plt.title('Rate of Medical Attendance by Prior SMS notification')
+    plt.xlabel('SMS received')
+    plt.ylabel('number of patients');
+attendance(df, 'sms_received', show, noshow);
+
+Seemingly, there the SMS nofitication does not make a real difference in the rate of showing up for medical appointments. The level of attendance is higher among the patients who did not receive a SMS in comparison to their peers who received a SMS notification of their medical appointments.
+
+Research Question 4 (Does health status push people to show for their medical appointments?)
+The correlation coefficient among age-hypertension, age-diabetes, diabetes-hyptension are high taking into consideration of the sample size: 0.51, 0.29 and 0.42 respectively. I will use the mean value of the age, since the mean and median values are age are almost the same.
+
+# Continue to explore the data to address your additional research
+#   questions. Add more headers as needed if you have more questions to
+#   investigate.
+df[show].groupby(['hypertension', 'diabetes']).mean()['age'].plot(kind='bar', color='green', label='show')
+df[noshow].groupby(['hypertension', 'diabetes']).mean()['age'].plot(kind='bar', color='red', label='noshow')
+plt.legend;
+plt.title('Chronic Dieases, Age and Medical Appointments Attendance Nexus')
+plt.xlabel('Chronic Dieases')
+plt.ylabel('Average Age');
+
+df[show].groupby(['hypertension', 'diabetes']).mean()['age'], df[noshow].groupby(['hypertension', 'diabetes']).mean()['age']
+(hypertension  diabetes
+ 0             0           30.713360
+               1           53.701370
+ 1             0           60.270517
+               1           63.764303
+ Name: age, dtype: float64, hypertension  diabetes
+ 0             0           28.768691
+               1           49.481172
+ 1             0           58.650380
+               1           62.913282
+ Name: age, dtype: float64)
+It shows the hyptension and diabetes as chronic dieases would not push people to adhere to their medical appointments. The most adherent group would be 50 (plus or minus) years old patients of diabetes. The lowest level of attendance is the eldest group who are suffering of both of diabetes and hyptertensions.
+
+Research Question 5 (Can age and gender together break down the medical appointment attendance's low rate?)
+df[show].groupby(['gender']).mean()['age'].plot(kind='bar', color='orange', label='show')
+df[noshow].groupby(['gender']).mean()['age'].plot(kind='bar', color='purple', label='noshow')
+plt.legend;
+plt.title('Demography and Medical Appointments Attendance Dynamics')
+plt.xlabel('Gender')
+plt.ylabel('Average Age');
+
+df[show].groupby(['gender']).mean()['age'], df[noshow].groupby(['gender']).mean()['age']
+(gender
+ F    39.130292
+ M    33.766269
+ Name: age, dtype: float64, gender
+ F    36.06501
+ M    31.22040
+ Name: age, dtype: float64)
+df[show].groupby(['gender']).median()['age'], df[noshow].groupby(['gender']).median()['age']
+(gender
+ F    39
+ M    32
+ Name: age, dtype: int64, gender
+ F    34
+ M    29
+ Name: age, dtype: int64)
+Age and Gender cannot explain the low rate of the medical attendance rate. It could help to decipher the low attendance rate in the presence of other demographic factors, for instance like: educational level, number of members in a household, and living standard.
+
+Research Question 6 (May Neighbourhood along SMS notification coverage input some insight on the attendance of medical appointments?)
+plt.figure(figsize=[20,5])
+df[show].groupby(['neighbourhood']).sms_received.mean().plot(kind='bar', color='orange', label='show')
+df[noshow].groupby(['neighbourhood']).sms_received.mean().plot(kind='bar', color='purple', label='noshow')
+plt.legend;
+plt.title('Attendance by SMS Notification and Neighbourhood')
+plt.xlabel('Neighbourhood')
+plt.ylabel('Patients notified by SMS');
+
+We can draw a lesson here that the neighbourhood played a role in the attendance rate. Surprisingly, there are two neighbourhoods, whose inhabitants, who received a SMS, showed up for their medical appointments. That means, if we have had here more variables, we may could figured out a clearer picture about the role of neighbourhood in this equation.
+
+
+Conclusions
+We can some of these factors could explain the level of attendance to some extend, like neighbourhood, while others did not play any siginifcant role in that, SMS notification and chronic dieases.
+
+Limitation: I strnogly believe demogrphy has a great role in this kind of studies, We are in need of more demographic variables to have a clearer picture on how age and gender could explain the showing-up for medical appointments. Some factors, like: educational level, number of family member per household, the quality of transportation, and car ownership.
+
+Submitting your Project
+Tip: Before you submit your project, you need to create a .html or .pdf version of this notebook in the workspace here. To do that, run the code cell below. If it worked correctly, you should get a return code of 0, and you should see the generated .html file in the workspace directory (click on the orange Jupyter icon in the upper left).
+
+Tip: Alternatively, you can download this report as .html via the File > Download as submenu, and then manually upload it into the workspace directory by clicking on the orange Jupyter icon in the upper left, then using the Upload button.
+
+Tip: Once you've done this, you can submit your project by clicking on the "Submit Project" button in the lower right here. This will create and submit a zip file with this .ipynb doc and the .html or .pdf version you created. Congratulations!
+
+from subprocess import call
+call(['python', '-m', 'nbconvert', 'Investigate_a_Dataset.ipynb'])
+0
