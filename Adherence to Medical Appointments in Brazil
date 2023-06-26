@@ -1,4 +1,4 @@
-# AT
+razi# AT
 Project: Investigate a Dataset - No Show Appointments in Brazil]
 Table of Contents
 Introduction
@@ -7,27 +7,27 @@ Exploratory Data Analysis
 Conclusions
 
 Introduction
-Our study dataset is about the rate of medical appointment' attendance in Brazil.
+Our study dataset is about the rate of medical appointment attendance in Brazil.
 
-We are looking forward to drawing a clearer picture on which medical, social and demopgraphic factors can play a role in that.
+We are looking forward to drawing a clearer picture of which medical, social, and demographic factors can play a role in that.
 
 Our dataset is a sample size of 100,000 medical appointments across Brazil.
 
 Dataset Description
-We have here in the dataset 14 columns: one column presenting itelf as the dependent variable, "No-Show", which explains if the patient with a medical appointment showed or not. The dataset consistents on another 13 independent variables to explain if they affect the attendance rate:
+We have here in the dataset 14 columns: one column presenting itself as the dependent variable, "No-Show", which explains if the patient with a medical appointment showed or not. The dataset consistents on another 13 independent variables to explain if they affect the attendance rate:
 
-Social factors: Scholarship, if the patient is enroled in the Bolsia Familia Program.
-Medical factors, factors that determines the health status of the patient, like: handicap, alcoholism, chronic dieases (hypertension, diabetes).
-Demographic factors: neighoubrhood age and gender
-Other facors, like SMS notification, whether the patients recieved a SMS notification reminding them of their appointments.
+Social factors: Scholarship, if the patient is enrolled in the Bolsa Familia Program.
+Medical factors are factors that determine the health status of the patient, like a handicap, alcoholism, and chronic diseases (hypertension, diabetes).
+Demographic factors: neighborhood age and gender
+Other factors, like SMS notification, whether the patients received an SMS notification reminding them of their appointments.
 Question(s) for Analysis
-We are looking to tackle the folliwng questions in the light of the given dataset:
+We are looking to tackle the following questions in light of the given dataset:
 
 Does Age play a role in the tendency of patients to show up for their medical appointments?
-Does Gender plays also a role?
-Would SMS notification improve the medical appointments' attendance?
-Does health status push people to show for their medical appointments?
-Can age and gender together break down the medical appointment attendance's low rate?
+Does Gender play also a role?
+Would SMS notifications improve medical appointment attendance?
+Does health status push people to show up for their medical appointments?
+Can age and gender together break down the medical appointment attendance low rate?
 May Neighbourhood along SMS notification coverage input some insight on the attendance of medical appointments?
 # Use this cell to set up import statements for all of the packages that you
 #   plan to use.
