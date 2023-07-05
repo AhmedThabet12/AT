@@ -1,0 +1,179 @@
+/*Challenge 1: High-level Context and general queries*/
+
+/* How many transactions took place between the years 2011 and 2012?*/
+SELECT
+COUNT(total) AS [TransactionsCount]
+FROM 
+Invoice
+WHERE
+InvoiceDate BETWEEN '2011-01-01' AND '2012-12-31';
+
+/* How much money did WSDA Music make during the same period?*/
+SELECT 
+SUM(total) AS [TotalSales]
+FROM 
+Invoice
+WHERE
+InvoiceDate BETWEEN '2011-01-01' AND '2012-12-31';
+
+
+/*Challenge 2: More targeted questions that query tables containing data about customers and employees*/
+
+/* Get a list of customers who made purchases between 2011 and 2012*/
+SELECT
+c.FirstName || ' ' || c.LastName AS [Customer Full Name]
+FROM 
+Customer c
+INNER JOIN
+Invoice i
+ON
+c.CustomerId = i.CustomerId
+WHERE
+InvoiceDate BETWEEN '2011-01-01' AND '2012-12-31';
+
+/*Get a list of customers, sales reps, and total transaction amounts for each customer between 2011 and 2012.*/
+SELECT
+c.FirstName || ' ' || c.LastName AS [Customer Full Name], e.FirstName || ' ' || e.LastName AS [Sales reps Name], SUM(i.total) AS [Total Purchase]
+FROM 
+Customer c
+INNER JOIN
+Invoice i
+ON
+c.CustomerId = i.CustomerId
+INNER JOIN
+Employee e
+ON
+c.SupportRepId = e.EmployeeId
+WHERE
+InvoiceDate BETWEEN '2011-01-01' AND '2012-12-31'
+GROUP BY 1
+ORDER BY 3 DESC;
+
+/* How many transactions are above the average transaction amount during the same time period?*/
+SELECT
+COUNT(total) AS [Above Average Transactions]
+FROM
+Invoice
+WHERE
+InvoiceDate BETWEEN '2011-01-01' AND '2012-12-31'
+AND
+total > (
+	SELECT 
+	AVG(total)
+	FROM 
+	Invoice
+	WHERE 
+	InvoiceDate BETWEEN '2011-01-01' AND '2012-12-31'
+	);
+
+/*What is the average transaction amount for each year that WSDA Music has been in business?*/	
+SELECT 
+strftime('%Y',InvoiceDate), ROUND(AVG(total),2) AS [Average Sales per Year]
+FROM
+Invoice
+GROUP BY 1
+ORDER BY 1;
+
+/*Challenege 3: In-depth Analysis Performance*/
+
+/*Get a list of employees who exceeded the average transaction amount from sales they generated during 2011 and 2012.*/
+SELECT 
+e.FirstName || ' ' || e.LastName AS [Sales reps Name], SUM(i.total) AS [Total Sales]
+FROM
+Customer c
+INNER JOIN
+invoice i
+ON
+c.CustomerId = i.CustomerId
+INNER JOIN 
+Employee e
+ON
+e.EmployeeId = c.SupportRepId
+WHERE
+InvoiceDate BETWEEN '2011-01-01' AND '2012-12-31'
+AND
+i.total > (
+			SELECT ROUND(AVG(total),2)
+			FROM invoice
+			WHERE InvoiceDate BETWEEN '2011-01-01' AND '2012-12-31'
+			)
+GROUP BY 1
+ORDER BY 2 DESC;
+
+/* Create a Commission Payout column that displays each employee’s commission based on 15% of the sales transaction amount.*/
+
+CREATE VIEW V_payout AS
+SELECT
+e.FirstName || ' ' || e.LastName AS [SalesrepsName], SUM(i.total) AS [Total Sales], ROUND(SUM(i.total)*0.15,2) AS [CommissionperEmployee] 
+FROM
+Customer c
+INNER JOIN
+invoice i
+ON
+c.CustomerId = i.CustomerId
+INNER JOIN 
+Employee e
+ON
+e.EmployeeId = c.SupportRepId
+WHERE
+InvoiceDate BETWEEN '2011-01-01' AND '2012-12-31'
+GROUP BY 1
+ORDER BY 3 DESC
+
+/* Which employee made the highest commission?*/
+SELECT
+SalesrepsName,MAX(CommissionperEmployee)
+FROM
+V_payout;
+
+/* List the customers that the employee identified in the last question*/
+SELECT
+c.FirstName || ' ' || c.LastName AS [Customer Full Name]
+FROM
+Customer c
+INNER JOIN 
+Employee e
+ON
+c.SupportRepId = e.EmployeeId
+WHERE
+e.FirstName LIKE 'Jane'
+AND
+e.LastName LIKE 'Peacock';
+
+/* Which customer made the highest purchase?*/
+SELECT
+c.FirstName || ' ' || c.LastName AS [Customer Full Name], MAX(i.total)
+FROM
+Customer c
+INNER JOIN
+Invoice i 
+ON
+c.CustomerId = i.CustomerId;
+
+/* Look at this customer record—do you see anything suspicious?*/
+SELECT *
+FROM 
+Customer c
+INNER JOIN
+invoice i
+ON
+c.CustomerId =i.CustomerId
+WHERE
+FirstName = 'John'
+AND 
+LastName = 'Doeein';
+
+/* Who do you conclude is our primary person of interest?*/
+
+SELECT 
+e.FirstName || ' ' || e.LastName AS [SalesrepsName]
+FROM 
+Employee e
+INNER JOIN
+Customer c
+ON
+e.EmployeeId = c.SupportRepId
+WHERE
+c.FirstName = 'John'
+AND 
+c.LastName = 'Doeein';
